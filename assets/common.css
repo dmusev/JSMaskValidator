@@ -1,0 +1,20 @@
+.clearable{  
+	text-indent: 3px;  
+ 	padding: 3px 18px 3px 3px;     /* Use the same right padding (18) in jQ! */
+	background: #fff url(data:image/gif;base64,R0lGODlhBwAHAIAAAP///5KSkiH5BAAAAAAALAAAAAAHAAcAAAIMTICmsGrIXnLxuDMLADs=) no-repeat right -10px center;  
+}
+.clearable.x  { 
+	transition: background 0.4s;
+	background-position: right 5px center; } /* (jQ) Show icon */
+.clearable.onX { cursor: pointer; }              /* (jQ) hover cursor style */
+.clearable::-ms-clear {display: none; width:0; height:0;} /* Remove IE default X */
+
+.errorIcon{
+	transition: background 0.4s;
+	text-indent: 18px;  
+	padding: 3px 3px 3px 18px;     /* Use the same right padding (18) in jQ! */
+	cursor: default;
+	background: #fff url(data:image/gif;base64,R0lGODlhEAAQAMQfAKt7BebNd82aANypANWiAP/oe//ulP/7y8SqaMCOBeq3ANmqD+O+PreEAMiVANuwJfbpsv/zq+3t3unMX7iFAN3Dd9i/d//jYv/dSf/THv/YMv/PDd3dzzMzM//MAP7+7iH5BAEAAB8ALAAAAAAQABAAAAV14CeOZGl+0DBAZzkcx9COwQRPwfwRMEzMtQigE8G1BAbDMCk4BRiFwjDKyJUSl2yik70kSpUHZvwAjDGPComiabvflJFlkalnhvbMwiICbP5/Q4CBfQoeh4iJCgAiCAANCQ4CBAQCDgkNAAgiEhyen6CeEh8hADs=) no-repeat left 10px center;
+}
+.errorIcon.x  { background-position: left default center; } /* (jQ) Show icon */
+.errorIcon::-ms-clear {display: none; width:0; height:0;} /* Remove IE default X */
