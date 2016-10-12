@@ -14,7 +14,7 @@ var ValidateEngine = function() {
 	this.jsonData 			= JSON.parse(testJSON);
 	this.ids 				= this.jsonData.ids;
 	this.submitButtonID 	= this.jsonData.buttons.submit;
-	this.checkForErrorClass = 'errorIcon';
+	this.errorClass = 'errorIcon';
 };
 
 ValidateEngine.prototype.initialize = function() {
@@ -70,7 +70,8 @@ ValidateEngine.prototype.addListenerByElement = function(element, dateTypeObj) {
 
 		element.className += ' clearable';
 
-		$(element).on('input', function() {
+		$(element).
+		on('input', function() {
 			$(element)[tog(element.value)]('x');
 		}).
 		on('keypress', function() {
@@ -78,13 +79,15 @@ ValidateEngine.prototype.addListenerByElement = function(element, dateTypeObj) {
 			$(element).removeClass('errorIcon');
 			$(element).addClass('clearable');
 		});
+
 		$(document).
 		on('mousemove', '.x', function(e) {
-			$(element)[tog(element.offsetWidth - 18 < e.clientX - element.getBoundingClientRect().left)]('onX');
+			e.preventDefault();
+			$(e.target)[tog(element.offsetWidth - 18 < e.clientX - element.getBoundingClientRect().left)]('onX');
 		}).
 		on('touchstart click', '.onX', function(e) {
 			e.preventDefault();
-			$(e.target).removeClass('x onX').val('').change();
+			$(e.target).removeClass('x onX').val('').change(_this.validateFields());
 		});
 
 		function tog(v) {
@@ -129,8 +132,6 @@ ValidateEngine.prototype.validateElement = function(element, dateTypeObj) {
 	var
 		_this = this
 	;
-
-	_this.validateFields();
 
 	if (checkRegex(element, dateTypeObj.regex) || checkForExclusiveSymbols(element.value, dateTypeObj.exclude)) {
 		_this.addErrorSign(element);
@@ -180,6 +181,7 @@ ValidateEngine.prototype.validateElement = function(element, dateTypeObj) {
 ValidateEngine.prototype.removeErrorSign = function(element) {
 	$(element).removeClass('errorIcon');
 	$(element).addClass('clearable');
+	this.validateFields();
 };
 
 ValidateEngine.prototype.addErrorSign = function(element) {
@@ -196,7 +198,7 @@ ValidateEngine.prototype.validateFields = function() {
 	for(var id in _this.ids) {
 		element = document.getElementById(id) || document.getElementsByName(id)[0];
 
-		if(element.value === '' || element.className.indexOf(_this.checkForErrorClass)) {
+		if(element.value === '' || element.className.indexOf(_this.errorClass) > -1) {
 			document.getElementById(_this.submitButtonID).disabled = true;
 			validValues = false;
 			break;
