@@ -64,8 +64,8 @@
                     console.warn('Element with id: ' + id + " cannot be properly masked/validated !");
                 }
             }
-        }
-    };
+        }};//
+
     /**
      * A main add listener function consisted of secondary function to attach a listener
      * to the passed element
@@ -162,8 +162,7 @@
                 clearMaskOnLostFocus: true
             }).
             mask(element);
-        };
-    };
+        };};//
 
     /**
      * Validating element/Validate through regex(if not available then for exclusive symbols)
@@ -219,8 +218,7 @@
                 }
             }
             return containsExChar;
-        };
-    };
+        };};//
 
     /**
      * Basic function for removing already asigned error sign
@@ -229,8 +227,7 @@
     ValidateEngine.prototype._removeErrorSign = function(element) {
         $(element).removeClass('errorIcon');
         $(element).addClass('clearable');
-        this._validateFields();
-    };
+        this._validateFields();};//
 
     /**
      * Attach error sign
@@ -238,8 +235,7 @@
      */
     ValidateEngine.prototype._addErrorSign = function(element) {
         $(element).removeClass('clearable');
-        $(element).addClass('errorIcon');
-    };
+        $(element).addClass('errorIcon');};//
 
     /**
      * Validate fields by set of ids
@@ -265,8 +261,7 @@
                 //Enable button by id
                 document.getElementById(_this.submitButtonID).disabled = false;
             }
-        }
-    };
+        }};//
 
     /**
      * Applying behaviour of a decimal or just fulfilling the number if not full.
@@ -277,10 +272,7 @@
         var
             re = new RegExp('\_', "g");
 
-        element.value = element.value.replace(re, "0");
-    };
-
-
+        element.value = element.value.replace(re, "0");};//
 
     /**
      * Enter pointer.
@@ -290,9 +282,11 @@
         validateEngine;
     validateEngine = new ValidateEngine(window.json);
 
+    //Add listener to call initiliaze on load
     window.addEventListener('load', function go(e) {
         validateEngine._initialize();
     }, false);
+
 
 
 })()
