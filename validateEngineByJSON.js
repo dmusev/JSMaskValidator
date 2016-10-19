@@ -1,219 +1,298 @@
-"use strict";
+/**
+ *  Validate Engine. Enter pointer
+ * =============================================================
+ * @author Dimtiar Musev, Sofia, Bulgaria
+ * Last edit: 19.10.2016
+ *
+ * Made for validating fields by given json 
+ * 
+ * @gameProducer EGT
+ * @version      2.0
+ *
+ * © 2016 Euro Games Technology. http://www.egt-bg.com
+ *  All rights reserved.
+ *  
+ */
 
-window.onload = function() {
+//-------------------------------------------------------------------------------------
+(function() {
+    "use strict";
+    /**
+     * Validate Engine Class
+     * @type {Function} 
+     */
 
-	var ve = new ValidateEngine();
+    var ValidateEngine = function(json) {
 
-	ve.initialize();
-};
+        this.eventOnBlur = "blur";
+        this.eventOnFocus = "focus";
+        this.jsonData = JSON.parse(json);
+        this.ids = this.jsonData.ids;
+        this.submitButtonID = this.jsonData.buttons.submit;
+        this.errorClass = 'errorIcon';
+    };
+    /**
+     * Initiliaze
+     */
+    ValidateEngine.prototype._initialize = function() {
+        var
+            _this = this,
+            givenDataTypes = {};
+        //Initial validation of the fields. Assure they are empty and disable submit button
+        _this._validateFields();
 
-var ValidateEngine = function() {
+        //Associate array
+        _this.jsonData.masking.forEach(function(dataType) {
+                givenDataTypes[dataType["type"]] = {}
+                for (var property in dataType) {
+                    if (dataType.hasOwnProperty(property)) {
+                        Object.defineProperty(givenDataTypes[dataType["type"]], property, {
+                            value: dataType[property] ? dataType[property] : ''
+                        });
+                    }
+                }
+            })
+            //Associate array by ids and add listeners for the avaialble data type properties
+        for (var id in _this.ids) {
+            if (_this.ids.hasOwnProperty(id)) {
+                var dataTypeProperties = givenDataTypes[_this.ids[id]];
+                var element = document.getElementById(id) || document.getElementsByName(id)[0];
+                if (typeof(element) != 'undefined' && typeof(dataTypeProperties) != 'undefined') {
+                    //Function adding a listener to particular element and datatype properties
+                    this._addListenerByElement(element, dataTypeProperties);
+                } else {
+                    console.warn('Element with id: ' + id + " cannot be properly masked/validated !");
+                }
+            }
+        }
+    };
+    /**
+     * A main add listener function consisted of secondary function to attach a listener
+     * to the passed element
+     * 
+     * @param {[type]} element     
+     * @param {[type]} dateTypeObj
+     */
+    ValidateEngine.prototype._addListenerByElement = function(element, dateTypeObj) {
 
-	this.eventOnBlur 		= "blur";
-	this.eventOnFocus 		= "focus";
-	this.jsonData 			= JSON.parse(testJSON);
-	this.ids 				= this.jsonData.ids;
-	this.submitButtonID 	= this.jsonData.buttons.submit;
-	this.errorClass = 'errorIcon';
-};
+        var
+            _this = this;
 
-ValidateEngine.prototype.initialize = function() {
-	var
-		_this			= this,
-		givenDataTypes	= {}
-	;
+        if (typeof(dateTypeObj.mask) != 'undefined' && dateTypeObj.mask !== '') {
+            Inputmask(dateTypeObj.mask).mask(element);
+        } else if (typeof(dateTypeObj.custom) != 'undefined' && dateTypeObj.custom !== '') {
+            setCustomMask(dateTypeObj.custom, element, _this);
+        }
 
-	_this.validateFields();
+        //Attach listener function called for element 
+        //and a handler function to be executed on event(validate element which is also private function)
+        attachListener(element, function() {
+            _this._validateElement(element, dateTypeObj);
+        });
 
-	_this.jsonData.masking.forEach(function(dataType) {
-		givenDataTypes[dataType["type"]] = {}
-		for (var property in dataType) {
-			if (dataType.hasOwnProperty(property)) {
-				Object.defineProperty(givenDataTypes[dataType["type"]], property, {
-					value: dataType[property] ? dataType[property] : ''
-				});
-			}
-		}
-	})
+        /**
+         * Attach all listeners to the element and its behaviours
+         * @param  {[type]} element         
+         * @param  {[type]} functionHandler [A function to be executed on event]
+         */
+        function attachListener(element, functionHandler) {
+            element.addEventListener(_this.eventOnBlur, functionHandler);
 
-	for (var id in _this.ids) {
-		if (_this.ids.hasOwnProperty(id)) {
-			var dateTypeProperties = givenDataTypes[_this.ids[id]];
-			var element = document.getElementById(id) || document.getElementsByName(id)[0];
-			if (typeof(element) != 'undefined' && typeof(dateTypeProperties) != 'undefined') {
-				this.addListenerByElement(element, dateTypeProperties);
-			} else {
-				console.warn('Element with id: ' + id + " cannot be properly masked/validated !");
-			}
-		}
-	}
-};
+            element.className += ' clearable';
 
-ValidateEngine.prototype.addListenerByElement = function(element, dateTypeObj) {
+            $(element).
+            on('input', function() {
+                $(element)[tog(element.value)]('x');
+            }).
+            on('keypress', function() {
+                $(element)[tog(element.value)]('x');
+                $(element).removeClass('errorIcon');
+                $(element).addClass('clearable');
+            });
 
-	var
-		_this = this
-	;
+            $(document).
+            on('mousemove', '.x', function(e) {
+                e.preventDefault();
+                $(e.target)[tog(element.offsetWidth - 18 < e.clientX - element.getBoundingClientRect().left)]('onX');
+            }).
+            on('touchstart click', '.onX', function(e) {
+                e.preventDefault();
+                $(e.target).removeClass('x onX').val('').change(_this._validateFields());
+            });
 
-	if (typeof(dateTypeObj.mask) != 'undefined' && dateTypeObj.mask !== '') {
-		Inputmask(dateTypeObj.mask).mask(element);
-	} else if (typeof(dateTypeObj.custom) != 'undefined' && dateTypeObj.custom !== '') {
-		setCustomMask(dateTypeObj.custom, element, _this);
-	}
+            function tog(v) {
+                return v ? 'addClass' : 'removeClass';
+            }
+        }
+        /**
+         * Function defining a custom mask when there is not typical mask passed
+         * @param {[type]} custom  
+         * @param {[type]} element
+         * @param {[type]} _this
+         */
+        function setCustomMask(custom, element, _this) {
 
-	attachListener(element, function() {
-		_this.validateElement(element, dateTypeObj);
-	});
+            var
+                customTypeObj = custom.type,
+                customTypes = custom.type.split(','),
+                customMask = '',
+                typeDelimiter = custom.delimiter ? custom.delimiter.split('') : '',
+                customMinLength = custom.minLength ? custom.minLength.split(',') : '1',
+                customMaxLength = custom.maxLength ? custom.maxLength.split(',') : '9';
 
-	function attachListener(element, functionHandler) {
-		element.addEventListener(_this.eventOnBlur, functionHandler);
+            //Creating custom mask by given mask parameters
+            for (var i = 0; i < customTypes.length; i++) {
+                customMask += customTypes[i] + '{' + (customMinLength[i] ? customMinLength[i] : '1') + ',' + (customMaxLength[i] ? customMaxLength[i] : '9') + '}' + (typeDelimiter[i] ? typeDelimiter[i] : '');
+            }
 
-		element.className += ' clearable';
+            Inputmask(customMask, {
+                oncomplete: function(buffer, opts) {
+                    //Remove error sign
+                    _this._removeErrorSign(element);
+                },
+                onincomplete: function(buffer, opts) {
+                    if (customTypeObj.indexOf('a') >= 0) {
+                        //Add error sign
+                        _this._addErrorSign(element);
+                    } else {
+                        //Apply decimal behaviour(eg: fulfil with zeros if not full decimal number)
+                        _this._applyDecimalBehaviour(element, typeDelimiter);
+                    }
+                },
+                clearMaskOnLostFocus: true
+            }).
+            mask(element);
+        };
+    };
 
-		$(element).
-		on('input', function() {
-			$(element)[tog(element.value)]('x');
-		}).
-		on('keypress', function() {
-			$(element)[tog(element.value)]('x');
-			$(element).removeClass('errorIcon');
-			$(element).addClass('clearable');
-		});
+    /**
+     * Validating element/Validate through regex(if not available then for exclusive symbols)
+     * @param  {[type]} element     [description]
+     * @param  {[type]} dateTypeObj [description]
+     */
+    ValidateEngine.prototype._validateElement = function(element, dateTypeObj) {
+        var
+            _this = this;
 
-		$(document).
-		on('mousemove', '.x', function(e) {
-			e.preventDefault();
-			$(e.target)[tog(element.offsetWidth - 18 < e.clientX - element.getBoundingClientRect().left)]('onX');
-		}).
-		on('touchstart click', '.onX', function(e) {
-			e.preventDefault();
-			$(e.target).removeClass('x onX').val('').change(_this.validateFields());
-		});
+        if (checkRegex(element, dateTypeObj.regex) || checkForExclusiveSymbols(element.value, dateTypeObj.exclude)) {
+            //Add error sign
+            _this._addErrorSign(element);
+        } else {
+            //Remove error sign
+            _this._removeErrorSign(element);
+        }
 
-		function tog(v) {
-			return v ? 'addClass' : 'removeClass';
-		}
-	}
+        //Validate element value by given regex
+        function checkRegex(elem, regex) {
+            if (typeof(regex) != 'undefined' && regex !== '') {
+                var re = new RegExp(regex, 'g');
 
-	function setCustomMask(custom, element, _this) {
+                if (re.test(elem.value)) {
+                    return false;
+                } else if (elem.value !== "") {
+                    return true;
+                } else if (typeof(elem.value) == "undefined") {
+                    console.warn('Unable to validate ' + elem.name + ' element.');
+                    return false;
+                }
+            } else {
+                console.warn('Invalid regex of ' + elem.name + ' element.');
+                return false;
+            }
+        };
 
-		var
-			customTypeObj	= custom.type,
-			customTypes		= custom.type.split(','),
-			customMask 		= '',
-			typeDelimiter 	= custom.delimiter ? custom.delimiter.split('') : '',
-			customMinLength = custom.minLength ? custom.minLength.split(',') : '1',
-			customMaxLength = custom.maxLength ? custom.maxLength.split(',') : '9'
-		;
+        //Check for given exclusive symbols in element's value
+        function checkForExclusiveSymbols(value, exChars) {
+            var
+                containsExChar;
 
-		for (var i = 0; i < customTypes.length; i++) {
-			customMask += customTypes[i] + '{' + (customMinLength[i] ? customMinLength[i] : '1') + ',' + (customMaxLength[i] ? customMaxLength[i] : '9') + '}' + (typeDelimiter[i] ? typeDelimiter[i] : '');
-		}
+            containsExChar = false;
 
-		Inputmask(customMask, {
-			oncomplete: function(buffer, opts) {
-				_this.removeErrorSign(element);
-			},
-			onincomplete: function(buffer, opts) {
-				if(customTypeObj.indexOf('a') >= 0) {
-					_this.addErrorSign(element);
-				} else {
-					_this.applyDecimalBehaviour(element, typeDelimiter);
-				}
-			},
-			clearMaskOnLostFocus: true
-		}).
-		mask(element);
-	};
+            if (typeof(exChars) != 'undefined' && exChars !== '') {
+                var i = exChars.length;
+                while (i--) {
+                    if (value.indexOf(exChars[i]) != -1) {
+                        containsExChar = true;
 
-};
+                        return containsExChar;
+                    }
+                }
+            }
+            return containsExChar;
+        };
+    };
 
-ValidateEngine.prototype.validateElement = function(element, dateTypeObj) {
-	var
-		_this = this
-	;
+    /**
+     * Basic function for removing already asigned error sign
+     * @param  {[type]} element [description]
+     */
+    ValidateEngine.prototype._removeErrorSign = function(element) {
+        $(element).removeClass('errorIcon');
+        $(element).addClass('clearable');
+        this._validateFields();
+    };
 
-	if (checkRegex(element, dateTypeObj.regex) || checkForExclusiveSymbols(element.value, dateTypeObj.exclude)) {
-		_this.addErrorSign(element);
-	} else {
-		_this.removeErrorSign(element);
-	}
+    /**
+     * Attach error sign
+     * @param {[type]} element [description]
+     */
+    ValidateEngine.prototype._addErrorSign = function(element) {
+        $(element).removeClass('clearable');
+        $(element).addClass('errorIcon');
+    };
 
-	function checkRegex(elem, regex) {
-		if (typeof(regex) != 'undefined' && regex !== '') {
-			var re = new RegExp(regex, 'g');
+    /**
+     * Validate fields by set of ids
+     * @return {[type]} [description]
+     */
+    ValidateEngine.prototype._validateFields = function() {
+        var
+            _this = this,
+            element;
 
-			if (re.test(elem.value)) {
-				return false;
-			} else if (elem.value !== "") {
-				return true;
-			} else if (typeof(elem.value) == "undefined") {
-				console.warn('Unable to validate ' + elem.name + ' element.');
-				return false;
-			}
-		} else {
-			console.warn('Invalid regex of ' + elem.name + ' element.');
-			return false;
-		}
-	};
+        for (var id in _this.ids) {
+            element = document.getElementById(id) || document.getElementsByName(id)[0];
 
-	function checkForExclusiveSymbols(value, exChars) {
-		var
-			containsExChar
-		;
+            if (element.value === '' || element.className.indexOf(_this.errorClass) > -1) {
+                //Disable button by id
+                document.getElementById(_this.submitButtonID).disabled = true;
+                //Global variable standing for valid or not fotm
+                window.validForm = false;
+                break;
+            } else {
+                //Global variable standing for valid or not fotm 
+                window.validForm = true;
+                //Enable button by id
+                document.getElementById(_this.submitButtonID).disabled = false;
+            }
+        }
+    };
 
-		containsExChar = false;
+    /**
+     * Applying behaviour of a decimal or just fulfilling the number if not full.
+     * @param  {[type]} element [description]
+     */
+    ValidateEngine.prototype._applyDecimalBehaviour = function(element) {
 
-		if (typeof(exChars) != 'undefined' && exChars !== '') {
-			var i = exChars.length;
-			while (i--) {
-				if (value.indexOf(exChars[i]) != -1) {
-					containsExChar = true;
+        var
+            re = new RegExp('\_', "g");
 
-					return containsExChar;
-				}
-			}
-		}
-		return containsExChar;
-	};
-};
+        element.value = element.value.replace(re, "0");
+    };
 
-ValidateEngine.prototype.removeErrorSign = function(element) {
-	$(element).removeClass('errorIcon');
-	$(element).addClass('clearable');
-	this.validateFields();
-};
 
-ValidateEngine.prototype.addErrorSign = function(element) {
-	$(element).removeClass('clearable');
-	$(element).addClass('errorIcon');
-};
 
-ValidateEngine.prototype.validateFields = function() {
-	var 
-		_this = this,
-		element
-	;
+    /**
+     * Enter pointer.
+     * @type {Function}
+     */
+    var
+        validateEngine;
+    validateEngine = new ValidateEngine(window.json);
 
-	for(var id in _this.ids) {
-		element = document.getElementById(id) || document.getElementsByName(id)[0];
+    window.addEventListener('load', function go(e) {
+        validateEngine._initialize();
+    }, false);
 
-		if(element.value === '' || element.className.indexOf(_this.errorClass) > -1) {
-			document.getElementById(_this.submitButtonID).disabled = true;
-			validValues = false;
-			break;
-		} else { 
-			validValues = true;
-			document.getElementById(_this.submitButtonID).disabled = false;
-		}
-	}
-};
 
-ValidateEngine.prototype.applyDecimalBehaviour = function(element) {
-
-	var 
-		re = new RegExp('\_',"g")
-	;
-
-	element.value = element.value.replace(re, "0");
-};
+})()
