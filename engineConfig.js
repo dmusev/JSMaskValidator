@@ -11,7 +11,9 @@
 	}; //
 
 	win.validForm = false;
-	win.json = JSON.stringify({
+
+
+	win.phpJsonForm = JSON.stringify({
 	  "masking": [
 	    {
 	      "type": "DATETIME_DDMMYYYY_HHMM",
@@ -69,9 +71,9 @@
 	      "exclude": "",
 	      "custom": {
 	        "type": "9,9",
-	        "delimiter": ".",
+	        "delimiter": ",",
 	        "minLength": "1,2",
-	        "maxLength": "3,2"
+	        "maxLength": "7,2"
 	      }
 	    },
 	    {
@@ -82,7 +84,7 @@
 	      "custom": {
 	        "type": "9",
 	        "delimiter": "",
-	        "minLength": "6",
+	        "minLength": "3",
 	        "maxLength": "6"
 	      }
 	    }

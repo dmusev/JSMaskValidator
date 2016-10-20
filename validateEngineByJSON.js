@@ -6,8 +6,8 @@
  *
  * Made for validating fields by given json 
  * 
- * @gameProducer EGT
- * @version      2.0
+ * @gameProducer  Euro Games Technology.
+ * @version      2.1
  *
  * © 2016 Euro Games Technology. http://www.egt-bg.com
  *  All rights reserved.
@@ -22,14 +22,16 @@
      * @type {Function} 
      */
 
-    var ValidateEngine = function(json) {
+    var ValidateEngine = function(obj) {
 
+        this.jsonData = obj;
         this.eventOnBlur = "blur";
         this.eventOnFocus = "focus";
-        this.jsonData = JSON.parse(json);
         this.ids = this.jsonData.ids;
         this.submitButtonID = this.jsonData.buttons.submit;
         this.errorClass = 'errorIcon';
+
+        return this;
     };
     /**
      * Initiliaze
@@ -37,22 +39,23 @@
     ValidateEngine.prototype._initialize = function() {
         var
             _this = this,
-            givenDataTypes = {};
+            givenDataTypes = {}
+        ;
         //Initial validation of the fields. Assure they are empty and disable submit button
         _this._validateFields();
 
         //Associate array
         _this.jsonData.masking.forEach(function(dataType) {
-                givenDataTypes[dataType["type"]] = {}
-                for (var property in dataType) {
-                    if (dataType.hasOwnProperty(property)) {
-                        Object.defineProperty(givenDataTypes[dataType["type"]], property, {
-                            value: dataType[property] ? dataType[property] : ''
-                        });
-                    }
+            givenDataTypes[dataType["type"]] = {};
+            for (var property in dataType) {
+                if (dataType.hasOwnProperty(property)) {
+                    Object.defineProperty(givenDataTypes[dataType["type"]], property, {
+                        value: dataType[property] ? dataType[property] : ''
+                    });
                 }
-            })
-            //Associate array by ids and add listeners for the avaialble data type properties
+            }
+        });
+        //Associate array by ids and add listeners for the avaialble data type properties
         for (var id in _this.ids) {
             if (_this.ids.hasOwnProperty(id)) {
                 var dataTypeProperties = givenDataTypes[_this.ids[id]];
@@ -64,7 +67,8 @@
                     console.warn('Element with id: ' + id + " cannot be properly masked/validated !");
                 }
             }
-        }};//
+        }
+    }; //
 
     /**
      * A main add listener function consisted of secondary function to attach a listener
@@ -76,7 +80,8 @@
     ValidateEngine.prototype._addListenerByElement = function(element, dateTypeObj) {
 
         var
-            _this = this;
+            _this = this
+        ;
 
         if (typeof(dateTypeObj.mask) != 'undefined' && dateTypeObj.mask !== '') {
             Inputmask(dateTypeObj.mask).mask(element);
@@ -123,7 +128,7 @@
             function tog(v) {
                 return v ? 'addClass' : 'removeClass';
             }
-        }
+        } // attachListener
         /**
          * Function defining a custom mask when there is not typical mask passed
          * @param {[type]} custom  
@@ -138,13 +143,16 @@
                 customMask = '',
                 typeDelimiter = custom.delimiter ? custom.delimiter.split('') : '',
                 customMinLength = custom.minLength ? custom.minLength.split(',') : '1',
-                customMaxLength = custom.maxLength ? custom.maxLength.split(',') : '9';
+                customMaxLength = custom.maxLength ? custom.maxLength.split(',') : '9'
+            ;
 
-            //Creating custom mask by given mask parameters
             for (var i = 0; i < customTypes.length; i++) {
-                customMask += customTypes[i] + '{' + (customMinLength[i] ? customMinLength[i] : '1') + ',' + (customMaxLength[i] ? customMaxLength[i] : '9') + '}' + (typeDelimiter[i] ? typeDelimiter[i] : '');
+                var  
+                    diffMaxMin = customMaxLength[i] - customMinLength[i]
+                ;
+                customMask += customTypes[i].repeat(customMinLength[i] ? customMinLength[i] : '1') 
+                 + (diffMaxMin > 0 ? ('[' + customTypes[i] + ']').repeat(diffMaxMin) : '' ) + (typeDelimiter[i] ? typeDelimiter[i] : '');
             }
-
             Inputmask(customMask, {
                 oncomplete: function(buffer, opts) {
                     //Remove error sign
@@ -162,7 +170,8 @@
                 clearMaskOnLostFocus: true
             }).
             mask(element);
-        };};//
+        } // setCustomMask
+    }; // _addListenerByElement
 
     /**
      * Validating element/Validate through regex(if not available then for exclusive symbols)
@@ -171,7 +180,8 @@
      */
     ValidateEngine.prototype._validateElement = function(element, dateTypeObj) {
         var
-            _this = this;
+            _this = this
+        ;
 
         if (checkRegex(element, dateTypeObj.regex) || checkForExclusiveSymbols(element.value, dateTypeObj.exclude)) {
             //Add error sign
@@ -195,15 +205,16 @@
                     return false;
                 }
             } else {
-                console.warn('Invalid regex of ' + elem.name + ' element.');
+                // console.warn('Invalid regex of ' + elem.name + ' element.');
                 return false;
             }
-        };
+        } // checkRegex
 
         //Check for given exclusive symbols in element's value
         function checkForExclusiveSymbols(value, exChars) {
             var
-                containsExChar;
+                containsExChar
+            ;
 
             containsExChar = false;
 
@@ -218,7 +229,8 @@
                 }
             }
             return containsExChar;
-        };};//
+        } // checkForExclusiveSymbols
+    }; // _validateElement
 
     /**
      * Basic function for removing already asigned error sign
@@ -227,7 +239,8 @@
     ValidateEngine.prototype._removeErrorSign = function(element) {
         $(element).removeClass('errorIcon');
         $(element).addClass('clearable');
-        this._validateFields();};//
+        this._validateFields();
+    }; // _removeErrorSign
 
     /**
      * Attach error sign
@@ -235,7 +248,8 @@
      */
     ValidateEngine.prototype._addErrorSign = function(element) {
         $(element).removeClass('clearable');
-        $(element).addClass('errorIcon');};//
+        $(element).addClass('errorIcon');
+    }; // _addErrorSign
 
     /**
      * Validate fields by set of ids
@@ -244,7 +258,8 @@
     ValidateEngine.prototype._validateFields = function() {
         var
             _this = this,
-            element;
+            element
+        ;
 
         for (var id in _this.ids) {
             element = document.getElementById(id) || document.getElementsByName(id)[0];
@@ -261,7 +276,8 @@
                 //Enable button by id
                 document.getElementById(_this.submitButtonID).disabled = false;
             }
-        }};//
+        } // for id
+    }; // _validateFields
 
     /**
      * Applying behaviour of a decimal or just fulfilling the number if not full.
@@ -270,23 +286,52 @@
     ValidateEngine.prototype._applyDecimalBehaviour = function(element) {
 
         var
-            re = new RegExp('\_', "g");
+            re = new RegExp('\_', "g")
+        ;
+        element.value = element.value.replace(re, "0");
+    }; // _applyDecimalBehaviour
 
-        element.value = element.value.replace(re, "0");};//
+    /**
+     * Repeat extension to string literals so I can easily set up custom masks
+     * @param  {[type]} count Must be more than 1
+     */
+    String.prototype.repeat = function(count) {
+        if (count < 1) return '';
+
+        var result = '',
+            pattern = this.valueOf()
+        ;
+        while (count > 1) {
+            if (count & 1) result += pattern;
+            count >>= 1, pattern += pattern;
+        }
+        return result + pattern;
+    }; //repeat
+
+
 
     /**
      * Enter pointer.
      * @type {Function}
      */
     var
-        validateEngine;
-    validateEngine = new ValidateEngine(window.json);
+        json,
+        validateEngine
+    ;
 
     //Add listener to call initiliaze on load
     window.addEventListener('load', function go(e) {
-        validateEngine._initialize();
+        try {
+            json = JSON.parse(window.phpJsonForm);
+            if (json && typeof json === "object") {
+
+                validateEngine = new ValidateEngine(json);
+                validateEngine._initialize();
+
+            } // if json
+        } catch (e) {
+            return false;
+        } //
     }, false);
 
-
-
-})()
+})();
